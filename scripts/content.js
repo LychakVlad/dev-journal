@@ -1,24 +1,28 @@
 let lastInteractionTime = Date.now();
+const startTime = Date.now();
+let checkInProgress = false;
 
 function trackUserInteraction() {
+  if (checkInProgress) {
+    return;
+  }
+
+  checkInProgress = true;
+
   lastInteractionTime = Date.now();
 
-  chrome.runtime.sendMessage({
-    action: "updateTimeSpent",
-    url: window.location.href,
-    timeSpent: lastInteractionTime - startTime,
-  });
+  if (lastInteractionTime - startTime >= 10000) {
+    chrome.runtime.sendMessage({
+      action: "updateTimeSpentFor10Seconds",
+      url: window.location.href,
+    });
+  }
+
+  checkInProgress = false;
 }
 
-document.addEventListener("mousemove", trackUserInteraction);
-document.addEventListener("keydown", trackUserInteraction);
-document.addEventListener("click", trackUserInteraction);
-document.addEventListener("scroll", trackUserInteraction);
+const events = ["mousemove", "keydown", "click", "scroll"];
 
-const startTime = Date.now();
-
-chrome.runtime.sendMessage({
-  action: "updateTimeSpent",
-  url: window.location.href,
-  timeSpent: 0,
+events.forEach((event) => {
+  document.addEventListener(event, trackUserInteraction);
 });
